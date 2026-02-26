@@ -110,16 +110,17 @@ select_persona() {
 
 # Build CLAUDE.md by combining original + persona files
 build_claude_md() {
-  local worktree_path="$1"
-  local domain="$2"
-  local perspective="$3"
+  local git_root="$1"
+  local worktree_path="$2"
+  local domain="$3"
+  local perspective="$4"
 
   local base_file="${PERSONAS_DIR}/${domain}/base.md"
   local perspective_file="${PERSONAS_DIR}/${domain}/perspectives/${perspective}.md"
   local knowledge_index="${PERSONAS_DIR}/${domain}/knowledge-index.md"
-  local original_claude_md="${worktree_path}/CLAUDE.md"
+  local original_claude_md="${git_root}/CLAUDE.md"
 
-  # Start with original CLAUDE.md if it exists
+  # Start with original CLAUDE.md from the source repo (not worktree)
   local output=""
   if [ -f "$original_claude_md" ]; then
     output=$(cat "$original_claude_md")
@@ -147,7 +148,7 @@ build_claude_md() {
     output="${output}$(cat "$knowledge_index")"$'\n'
   fi
 
-  echo "$output" > "$original_claude_md"
+  echo "$output" > "${worktree_path}/CLAUDE.md"
 }
 
 # Activate a persona
@@ -211,7 +212,7 @@ activate_persona() {
 
   # Always rebuild CLAUDE.md with latest persona
   echo "Building CLAUDE.md with persona: ${domain}/${perspective}..."
-  build_claude_md "$worktree_path" "$domain" "$perspective"
+  build_claude_md "$git_root" "$worktree_path" "$domain" "$perspective"
 
   echo ""
   echo -e "${GREEN}${BOLD}Persona activated: ${domain}/${perspective}${NC}"
