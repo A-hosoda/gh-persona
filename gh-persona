@@ -28,10 +28,10 @@ Usage:
   gh persona clean [name]           Remove worktree(s)
 
 Examples:
-  gh persona investor/macro                    Activate investor/macro persona
-  gh persona list                              List available personas
-  gh persona clean myrepo-investor-macro       Remove specific worktree
-  gh persona clean                             Interactive cleanup
+  gh persona investor/macro              Activate investor/macro persona
+  gh persona list                        List available personas
+  gh persona clean investor-macro        Remove worktree (repo name auto-detected)
+  gh persona clean                       Interactive cleanup
 EOF
 }
 
@@ -268,11 +268,21 @@ clean_worktrees() {
   if [ -n "$target" ]; then
     # Clean specific worktree
     local worktree_path="${WORKTREE_BASE}-${target}"
+
+    # If not found, try prepending current repo name
+    if [ ! -d "$worktree_path" ]; then
+      local repo_name
+      repo_name=$(basename "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null)
+      if [ -n "$repo_name" ]; then
+        worktree_path="${WORKTREE_BASE}-${repo_name}-${target}"
+      fi
+    fi
+
     if [ -d "$worktree_path" ]; then
       remove_worktree "$worktree_path"
-      echo -e "${GREEN}Removed: ${target}${NC}"
+      echo -e "${GREEN}Removed: $(basename "$worktree_path" | sed "s/^persona-//")${NC}"
     else
-      echo -e "${RED}Worktree not found: ${worktree_path}${NC}" >&2
+      echo -e "${RED}Worktree not found. Use 'gh persona clean' to list available worktrees.${NC}" >&2
       exit 1
     fi
     return
