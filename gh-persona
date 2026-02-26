@@ -120,6 +120,9 @@ build_claude_md() {
   local knowledge_index="${PERSONAS_DIR}/${domain}/knowledge-index.md"
   local original_claude_md="${git_root}/CLAUDE.md"
 
+  # Remove worktree's CLAUDE.md to prevent stale content
+  rm -f "${worktree_path}/CLAUDE.md"
+
   # Start with original CLAUDE.md from the source repo (not worktree)
   local output=""
   if [ -f "$original_claude_md" ]; then
@@ -175,12 +178,20 @@ activate_persona() {
     exit 1
   fi
 
-  # Check we're in a git repo
+  # Check we're in a git repo and get the main repo root (not worktree)
   local git_root
   git_root=$(git rev-parse --show-toplevel 2>/dev/null) || {
     echo -e "${RED}Not in a git repository${NC}" >&2
     exit 1
   }
+
+  # If running from inside a worktree, resolve to the main repo
+  local common_dir
+  common_dir=$(git rev-parse --git-common-dir 2>/dev/null)
+  if [ -n "$common_dir" ] && [ "$common_dir" != ".git" ]; then
+    # We're in a worktree; resolve main repo root from common git dir
+    git_root=$(cd "$common_dir/.." && pwd)
+  fi
 
   local worktree_name="${domain}-${perspective}"
   local worktree_path="${WORKTREE_BASE}-${worktree_name}"
