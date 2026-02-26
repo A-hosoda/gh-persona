@@ -197,6 +197,9 @@ activate_persona() {
   repo_name=$(basename "$git_root")
   local worktree_name="${repo_name}-${domain}-${perspective}"
   local worktree_path="${WORKTREE_BASE}-${worktree_name}"
+  local short_hash
+  short_hash=$(git rev-parse --short HEAD)
+  local branch_name="persona-${worktree_name}-${short_hash}"
 
   # Check if worktree already exists
   if [ -d "$worktree_path" ]; then
@@ -206,21 +209,14 @@ activate_persona() {
     if [[ "$reuse" =~ ^[Nn] ]]; then
       echo "Removing existing worktree..."
       git worktree remove "$worktree_path" --force 2>/dev/null || rm -rf "$worktree_path"
-      # Also remove the branch if it exists
-      git branch -D "persona-${worktree_name}" 2>/dev/null || true
       echo "Creating new worktree..."
-      git worktree add "$worktree_path" -b "persona-${worktree_name}" HEAD
+      git worktree add "$worktree_path" -b "$branch_name" HEAD
     else
       echo "Reusing existing worktree."
     fi
   else
     echo "Creating worktree at ${worktree_path}..."
-    git worktree add "$worktree_path" -b "persona-${worktree_name}" HEAD 2>/dev/null || \
-      git worktree add "$worktree_path" "persona-${worktree_name}" 2>/dev/null || {
-        # Branch might already exist from a previous session
-        git branch -D "persona-${worktree_name}" 2>/dev/null || true
-        git worktree add "$worktree_path" -b "persona-${worktree_name}" HEAD
-      }
+    git worktree add "$worktree_path" -b "$branch_name" HEAD
   fi
 
   # Always rebuild CLAUDE.md with latest persona
