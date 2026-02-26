@@ -23,15 +23,16 @@ NC='\033[0m'
 print_usage() {
   cat <<EOF
 Usage:
-  gh persona <domain/perspective>   Activate a persona in a worktree
-  gh persona list                   List available personas
-  gh persona clean [name]           Remove worktree(s)
+  gh persona <domain/perspective>         Activate a persona in a worktree
+  gh persona list                         List available personas
+  gh persona clean [domain/perspective]   Remove worktree
+  gh persona clean                        Interactive cleanup
 
 Examples:
-  gh persona investor/macro              Activate investor/macro persona
-  gh persona list                        List available personas
-  gh persona clean investor-macro        Remove worktree (repo name auto-detected)
-  gh persona clean                       Interactive cleanup
+  gh persona investor/macro               Activate investor/macro persona
+  gh persona list                         Show all available personas
+  gh persona clean investor/macro         Remove investor/macro worktree
+  gh persona clean                        Interactive cleanup
 EOF
 }
 
@@ -266,23 +267,20 @@ clean_worktrees() {
   local target="$1"
 
   if [ -n "$target" ]; then
-    # Clean specific worktree
-    local worktree_path="${WORKTREE_BASE}-${target}"
-
-    # If not found, try prepending current repo name
-    if [ ! -d "$worktree_path" ]; then
-      local repo_name
-      repo_name=$(basename "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null)
-      if [ -n "$repo_name" ]; then
-        worktree_path="${WORKTREE_BASE}-${repo_name}-${target}"
-      fi
-    fi
+    # Accept domain/perspective format (same as activate)
+    local repo_name
+    repo_name=$(basename "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null)
+    local worktree_name
+    # Convert investor/macro -> repo-investor-macro
+    worktree_name="${repo_name}-$(echo "$target" | tr '/' '-')"
+    local worktree_path="${WORKTREE_BASE}-${worktree_name}"
 
     if [ -d "$worktree_path" ]; then
       remove_worktree "$worktree_path"
-      echo -e "${GREEN}Removed: $(basename "$worktree_path" | sed "s/^persona-//")${NC}"
+      echo -e "${GREEN}Removed: ${target}${NC}"
     else
-      echo -e "${RED}Worktree not found. Use 'gh persona clean' to list available worktrees.${NC}" >&2
+      echo -e "${RED}Worktree not found: ${target}${NC}" >&2
+      echo -e "Use 'gh persona clean' to list available worktrees." >&2
       exit 1
     fi
     return
