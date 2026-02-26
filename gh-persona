@@ -28,10 +28,10 @@ Usage:
   gh persona clean [name]           Remove worktree(s)
 
 Examples:
-  gh persona investor/macro         Activate investor/macro persona
-  gh persona list                   Show all available personas
-  gh persona clean investor-macro   Remove specific worktree
-  gh persona clean                  Interactive cleanup
+  gh persona investor/macro                    Activate investor/macro persona
+  gh persona list                              List available personas
+  gh persona clean myrepo-investor-macro       Remove specific worktree
+  gh persona clean                             Interactive cleanup
 EOF
 }
 
@@ -193,7 +193,9 @@ activate_persona() {
     git_root=$(cd "$common_dir/.." && pwd)
   fi
 
-  local worktree_name="${domain}-${perspective}"
+  local repo_name
+  repo_name=$(basename "$git_root")
+  local worktree_name="${repo_name}-${domain}-${perspective}"
   local worktree_path="${WORKTREE_BASE}-${worktree_name}"
 
   # Check if worktree already exists
